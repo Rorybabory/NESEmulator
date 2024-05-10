@@ -1,0 +1,8 @@
+﻿  CPU.cpp
+C:\Users\Rory Lambert\source\repos\NESEmulator2024\NESEmulator2024\CPU.cpp(191,15): warning C4129: 'o': unrecognized character escape sequence
+  Generating code
+  17 of 2487 functions ( 0.7%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    36 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  NESEmulator2024.vcxproj -> C:\Users\Rory Lambert\source\repos\NESEmulator2024\x64\Release\NESEmulator2024.exe

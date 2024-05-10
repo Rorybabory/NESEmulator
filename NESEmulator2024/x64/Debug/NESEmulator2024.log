@@ -1,0 +1,3 @@
+﻿  main.cpp
+C:\Users\Rory Lambert\source\repos\NESEmulator2024\NESEmulator2024\main.cpp(72,15): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  NESEmulator2024.vcxproj -> C:\Users\Rory Lambert\source\repos\NESEmulator2024\x64\Debug\NESEmulator2024.exe

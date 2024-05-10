@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34031.279
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NESEmulator2024", "NESEmulator2024\NESEmulator2024.vcxproj", "{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}.Debug|x64.ActiveCfg = Debug|x64
+		{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}.Debug|x64.Build.0 = Debug|x64
+		{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}.Debug|x86.ActiveCfg = Debug|Win32
+		{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}.Debug|x86.Build.0 = Debug|Win32
+		{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}.Release|x64.ActiveCfg = Release|x64
+		{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}.Release|x64.Build.0 = Release|x64
+		{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}.Release|x86.ActiveCfg = Release|Win32
+		{A81F80ED-1E12-4F57-B7CD-39A1FEC3EC4A}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4AEED8D1-7559-4372-A442-D52D7F3DBB31}
+	EndGlobalSection
+EndGlobal

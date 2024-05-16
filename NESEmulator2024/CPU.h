@@ -2,8 +2,15 @@
 
 #include <stdint.h>
 #include <functional>
+#include <string>
+
+#include <json.hpp>
+using json = nlohmann::json;
+
 
 class Bus;
+
+#define RUN_TESTS
 
 enum flags {
 	FLAG_CARRY = 1,
@@ -35,8 +42,9 @@ enum addr_mode {
 class CPU;
 
 typedef struct Oprand {
-	std::function<uint16_t(CPU&)> addrMode;
+	addr_mode addrMode;
 	std::function<void(CPU&)> instruction;
+	char name[4];
 	uint8_t delay;
 } Oprand;
 
@@ -63,6 +71,10 @@ public:
 	void SetButton(uint8_t key);
 
 	void SetFlag(uint8_t flag, bool val);
+
+	std::pair<std::string, int> DisassembleInstruction(uint16_t memLocation); //disassembled string and length
+
+	std::string DisassembleROM();
 
 	//Addressing modes
 	uint16_t AddrImplied();
@@ -150,6 +162,11 @@ private:
 	uint16_t address;
 	uint8_t addrMode;
 	
+
+#ifdef RUN_TESTS
+	json tests[0xff];
+
+#endif
 
 	uint8_t delay;
 

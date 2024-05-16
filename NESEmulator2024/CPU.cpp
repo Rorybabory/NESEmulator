@@ -5,106 +5,124 @@
 
 #include <iostream>
 #include <stdint.h>
+#include <sstream>
+#include <string>
 
 #include "imgui/imgui.h"
+
+static std::function<uint16_t(CPU&)> addrMap[] = {
+	&CPU::AddrImplied,
+	&CPU::AddrAccumulator, 
+	&CPU::AddrImmediate,
+	&CPU::AddrZeroPage,
+	&CPU::AddrZeroPageX,
+	&CPU::AddrZeroPageY,
+	&CPU::AddrRelative,
+	&CPU::AddrAbsolute,
+	&CPU::AddrAbsoluteX,
+	&CPU::AddrAbsoluteY,
+	&CPU::AddrIndirect,
+	&CPU::AddrIndexedIndirect,
+	&CPU::AddrIndirectIndexed,
+};
 
 static Oprand opcodes[] = {
 
 	//0
-	{&CPU::AddrImplied, &CPU::BRK, 7},			{&CPU::AddrIndexedIndirect, &CPU::ORA, 6},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 0},
-	{&CPU::AddrImplied, &CPU::NOP, 3},			{&CPU::AddrZeroPage, &CPU::ORA, 3},			{&CPU::AddrZeroPage, &CPU::ASL, 5},			{&CPU::AddrImplied, &CPU::NOP, 5},
-	{&CPU::AddrImplied, &CPU::PHP, 3},			{&CPU::AddrImmediate, &CPU::ORA, 2},		{&CPU::AddrAccumulator, &CPU::ASL, 2},		{&CPU::AddrImplied, &CPU::NOP, 2},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrAbsolute, &CPU::ORA, 4},			{&CPU::AddrAbsolute, &CPU::ASL, 6},			{&CPU::AddrImplied, &CPU::NOP, 6},
+	{MODE_IMPLIED, &CPU::BRK, "BRK", 7},			{MODE_INDEXEDINDIRECT, &CPU::ORA, "ORA", 6},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 0},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 3},			{MODE_ZEROPAGE, &CPU::ORA, "ORA", 3},			{MODE_ZEROPAGE, &CPU::ASL, "ASL", 5},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
+	{MODE_IMPLIED, &CPU::PHP, "PHP", 3},			{MODE_IMMEDIATE, &CPU::ORA, "ORA", 2},		{MODE_ACCUMULATOR, &CPU::ASL, "ASL", 2},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ABSOLUTE, &CPU::ORA, "ORA", 4},			{MODE_ABSOLUTE, &CPU::ASL, "ASL", 6},			{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
 
 	//1
-	{&CPU::AddrRelative, &CPU::BPL, 2},			{&CPU::AddrIndirectIndexed, &CPU::ORA, 5},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 0},
-	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrZeroPageX, &CPU::ORA, 4},		{&CPU::AddrZeroPageX, &CPU::ASL, 6},		{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrImplied, &CPU::CLC, 2},			{&CPU::AddrAbsoluteY, &CPU::ORA, 4},		{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 7},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrAbsoluteX, &CPU::ORA, 4},		{&CPU::AddrAbsoluteX, &CPU::ASL, 7},		{&CPU::AddrImplied, &CPU::NOP, 7},
+	{MODE_RELATIVE, &CPU::BPL, "BPL", 2},			{MODE_INDIRECTINDEXED, &CPU::ORA, "ORA", 5},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 0},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_ZEROPAGEX, &CPU::ORA, "ORA", 4},		{MODE_ZEROPAGEX, &CPU::ASL, "ASL", 6},		{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_IMPLIED, &CPU::CLC, "CLC", 2},			{MODE_ABSOLUTEY, &CPU::ORA, "ORA", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ABSOLUTEX, &CPU::ORA, "ORA", 4},		{MODE_ABSOLUTEX, &CPU::ASL, "ASL", 7},		{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
 
 	//2
-	{&CPU::AddrAbsolute, &CPU::JSR, 6},			{&CPU::AddrIndexedIndirect, &CPU::AND, 6},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrZeroPage, &CPU::BIT, 3},			{&CPU::AddrZeroPage, &CPU::AND, 3},			{&CPU::AddrZeroPage, &CPU::ROL, 5},			{&CPU::AddrImplied, &CPU::NOP, 5},
-	{&CPU::AddrImplied, &CPU::PLP, 4},			{&CPU::AddrImmediate, &CPU::AND, 2},		{&CPU::AddrAccumulator, &CPU::ROL, 2},		{&CPU::AddrImplied, &CPU::NOP, 2},
-	{&CPU::AddrAbsolute, &CPU::BIT, 4},			{&CPU::AddrAbsolute, &CPU::AND, 4},			{&CPU::AddrAbsolute, &CPU::ROL, 6},			{&CPU::AddrImplied, &CPU::NOP, 6},
+	{MODE_ABSOLUTE, &CPU::JSR, "JSR", 6},			{MODE_INDEXEDINDIRECT, &CPU::AND, "AND", 6},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_ZEROPAGE, &CPU::BIT, "BIT", 3},			{MODE_ZEROPAGE, &CPU::AND, "AND", 3},			{MODE_ZEROPAGE, &CPU::ROL, "ROL", 5},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
+	{MODE_IMPLIED, &CPU::PLP, "PLP", 4},			{MODE_IMMEDIATE, &CPU::AND, "AND", 2},		{MODE_ACCUMULATOR, &CPU::ROL, "ROL", 2},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},
+	{MODE_ABSOLUTE, &CPU::BIT, "BIT", 4},			{MODE_ABSOLUTE, &CPU::AND, "AND", 4},			{MODE_ABSOLUTE, &CPU::ROL, "ROL", 6},			{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
 
 	//3
-	{&CPU::AddrRelative, &CPU::BMI, 2},			{&CPU::AddrIndirectIndexed, &CPU::AND, 5},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrZeroPageX, &CPU::AND, 4},		{&CPU::AddrZeroPageX, &CPU::ROL, 6},		{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrImplied, &CPU::SEC, 2},			{&CPU::AddrAbsoluteY, &CPU::AND, 4},		{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 7},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrAbsoluteX, &CPU::AND, 4},		{&CPU::AddrAbsoluteX, &CPU::ROL, 7},		{&CPU::AddrImplied, &CPU::NOP, 7},
+	{MODE_RELATIVE, &CPU::BMI, "BMI", 2},			{MODE_INDIRECTINDEXED, &CPU::AND, "AND", 5},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ZEROPAGEX, &CPU::AND, "AND", 4},		{MODE_ZEROPAGEX, &CPU::ROL, "ROL", 6},		{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_IMPLIED, &CPU::SEC, "SEC", 2},			{MODE_ABSOLUTEY, &CPU::AND, "AND", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ABSOLUTEX, &CPU::AND, "AND", 4},		{MODE_ABSOLUTEX, &CPU::ROL, "ROL", 7},		{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
 
 	//4
-	{&CPU::AddrImplied, &CPU::RTI, 6},			{&CPU::AddrIndexedIndirect, &CPU::EOR, 6},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrImplied, &CPU::NOP, 3},			{&CPU::AddrZeroPage, &CPU::EOR, 3},			{&CPU::AddrZeroPage, &CPU::LSR, 5},			{&CPU::AddrImplied, &CPU::NOP, 5},
-	{&CPU::AddrImplied, &CPU::PHA, 3},			{&CPU::AddrImmediate, &CPU::EOR, 2},		{&CPU::AddrAccumulator, &CPU::LSR, 2},		{&CPU::AddrImplied, &CPU::NOP, 2},
-	{&CPU::AddrAbsolute, &CPU::JMP,3},			{&CPU::AddrAbsolute, &CPU::EOR, 4},			{&CPU::AddrAbsolute, &CPU::LSR, 6},			{&CPU::AddrImplied, &CPU::NOP, 6},
+	{MODE_IMPLIED, &CPU::RTI, "RTI", 6},			{MODE_INDEXEDINDIRECT, &CPU::EOR, "EOR", 6},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 3},			{MODE_ZEROPAGE, &CPU::EOR, "EOR", 3},			{MODE_ZEROPAGE, &CPU::LSR, "LSR", 5},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
+	{MODE_IMPLIED, &CPU::PHA, "PHA", 3},			{MODE_IMMEDIATE, &CPU::EOR, "EOR", 2},		{MODE_ACCUMULATOR, &CPU::LSR, "LSR", 2},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},
+	{MODE_ABSOLUTE, &CPU::JMP, "JMP",3},			{MODE_ABSOLUTE, &CPU::EOR, "EOR", 4},			{MODE_ABSOLUTE, &CPU::LSR, "LSR", 6},			{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
 
 	//5
-	{&CPU::AddrRelative, &CPU::BVC, 2},			{&CPU::AddrIndirectIndexed, &CPU::EOR, 5},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrZeroPageX, &CPU::EOR, 4},		{&CPU::AddrZeroPageX, &CPU::LSR, 6},		{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrImplied, &CPU::CLI, 2},			{&CPU::AddrAbsoluteX, &CPU::EOR, 4},		{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 7},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrAbsoluteX, &CPU::EOR, 4},		{&CPU::AddrAbsoluteX, &CPU::LSR, 7},		{&CPU::AddrImplied, &CPU::NOP, 0},
+	{MODE_RELATIVE, &CPU::BVC, "BVC", 2},			{MODE_INDIRECTINDEXED, &CPU::EOR, "EOR", 5},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ZEROPAGEX, &CPU::EOR, "EOR", 4},		{MODE_ZEROPAGEX, &CPU::LSR, "LSR", 6},		{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_IMPLIED, &CPU::CLI, "CLI", 2},			{MODE_ABSOLUTEX, &CPU::EOR, "EOR", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ABSOLUTEX, &CPU::EOR, "EOR", 4},		{MODE_ABSOLUTEX, &CPU::LSR, "LSR", 7},		{MODE_IMPLIED, &CPU::NOP, "NOP", 0},
 
 	//6
-	{&CPU::AddrImplied, &CPU::RTS, 6},			{&CPU::AddrIndexedIndirect, &CPU::ADC, 6},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrImplied, &CPU::NOP, 3},			{&CPU::AddrZeroPage, &CPU::ADC, 3},			{&CPU::AddrZeroPage, &CPU::ROR, 5},			{&CPU::AddrImplied, &CPU::NOP, 5},
-	{&CPU::AddrImplied, &CPU::PLA, 4},			{&CPU::AddrImmediate, &CPU::ADC, 2},		{&CPU::AddrAccumulator, &CPU::ROR, 2},		{&CPU::AddrImplied, &CPU::NOP, 2},
-	{&CPU::AddrIndirect, &CPU::JMP, 5},			{&CPU::AddrAbsolute, &CPU::ADC, 4},			{&CPU::AddrAbsolute, &CPU::ROR, 6},			{&CPU::AddrImplied, &CPU::NOP, 6},
+	{MODE_IMPLIED, &CPU::RTS, "RTS", 6},			{MODE_INDEXEDINDIRECT, &CPU::ADC, "ADC", 6},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 3},			{MODE_ZEROPAGE, &CPU::ADC, "ADC", 3},			{MODE_ZEROPAGE, &CPU::ROR, "ROR", 5},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
+	{MODE_IMPLIED, &CPU::PLA, "PLA", 4},			{MODE_IMMEDIATE, &CPU::ADC, "ADC", 2},		{MODE_ACCUMULATOR, &CPU::ROR, "ROR", 2},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},
+	{MODE_INDIRECT, &CPU::JMP, "JMP", 5},			{MODE_ABSOLUTE, &CPU::ADC, "ADC", 4},			{MODE_ABSOLUTE, &CPU::ROR, "ROR", 6},			{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
 
 	//7
-	{&CPU::AddrRelative, &CPU::BVS, 2},			{&CPU::AddrIndirectIndexed, &CPU::ADC, 5},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrZeroPageX, &CPU::ADC, 4},		{&CPU::AddrZeroPageX, &CPU::ROR, 6},		{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrImplied, &CPU::SEI, 2},			{&CPU::AddrAbsoluteY, &CPU::ADC, 4},		{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 7},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrAbsoluteX, &CPU::ADC, 4},		{&CPU::AddrAbsoluteX, &CPU::ROR, 7},		{&CPU::AddrImplied, &CPU::NOP, 7},
+	{MODE_RELATIVE, &CPU::BVS, "BVS", 2},			{MODE_INDIRECTINDEXED, &CPU::ADC, "ADC", 5},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ZEROPAGEX, &CPU::ADC, "ADC", 4},		{MODE_ZEROPAGEX, &CPU::ROR, "ROR", 6},		{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_IMPLIED, &CPU::SEI, "SEI", 2},			{MODE_ABSOLUTEY, &CPU::ADC, "ADC", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ABSOLUTEX, &CPU::ADC, "ADC", 4},		{MODE_ABSOLUTEX, &CPU::ROR, "ROR", 7},		{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
 
 	//8
-	{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrIndexedIndirect, &CPU::STA, 6},	{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrZeroPage, &CPU::STY, 3},			{&CPU::AddrZeroPage, &CPU::STA, 3},			{&CPU::AddrZeroPage, &CPU::STX, 3},			{&CPU::AddrImplied, &CPU::NOP, 3},
-	{&CPU::AddrImplied, &CPU::DEY, 2},			{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::TXA, 2},			{&CPU::AddrImplied, &CPU::NOP, 2},
-	{&CPU::AddrAbsolute, &CPU::STY, 4},			{&CPU::AddrAbsolute, &CPU::STA, 4},			{&CPU::AddrAbsolute, &CPU::STX, 4},			{&CPU::AddrImplied, &CPU::NOP, 4},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_INDEXEDINDIRECT, &CPU::STA, "STA", 6},	{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_ZEROPAGE, &CPU::STY, "STY", 3},			{MODE_ZEROPAGE, &CPU::STA, "STA", 3},			{MODE_ZEROPAGE, &CPU::STX, "STX", 3},			{MODE_IMPLIED, &CPU::NOP, "NOP", 3},
+	{MODE_IMPLIED, &CPU::DEY, "DEY", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::TXA, "TXA", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 2},
+	{MODE_ABSOLUTE, &CPU::STY, "STY", 4},			{MODE_ABSOLUTE, &CPU::STA, "STA", 4},			{MODE_ABSOLUTE, &CPU::STX, "STX", 4},			{MODE_IMPLIED, &CPU::NOP, "NOP", 4},
 
 	//9
-	{&CPU::AddrRelative, &CPU::BCC, 2},			{&CPU::AddrIndirectIndexed, &CPU::STA, 6},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrZeroPageX, &CPU::STY, 4},		{&CPU::AddrZeroPageX, &CPU::STA, 4},		{&CPU::AddrZeroPageY, &CPU::STX, 4},		{&CPU::AddrImplied, &CPU::NOP, 4},
-	{&CPU::AddrImplied, &CPU::TYA, 2},			{&CPU::AddrAbsoluteY, &CPU::STA, 5},		{&CPU::AddrImplied, &CPU::TXS, 2},			{&CPU::AddrImplied, &CPU::NOP, 5},
-	{&CPU::AddrImplied, &CPU::NOP, 5},			{&CPU::AddrAbsoluteX, &CPU::STA, 5},		{&CPU::AddrImplied, &CPU::NOP, 5},			{&CPU::AddrImplied, &CPU::NOP, 5},
+	{MODE_RELATIVE, &CPU::BCC, "BCC", 2},			{MODE_INDIRECTINDEXED, &CPU::STA, "STA", 6},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_ZEROPAGEX, &CPU::STY, "STY", 4},		{MODE_ZEROPAGEX, &CPU::STA, "STA", 4},		{MODE_ZEROPAGEY, &CPU::STX, "STX", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 4},
+	{MODE_IMPLIED, &CPU::TYA, "TYA", 2},			{MODE_ABSOLUTEY, &CPU::STA, "STA", 5},		{MODE_IMPLIED, &CPU::TXS, "TXS", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 5},			{MODE_ABSOLUTEX, &CPU::STA, "STA", 5},		{MODE_IMPLIED, &CPU::NOP, "NOP", 5},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
 
 	//A
-	{&CPU::AddrImmediate, &CPU::LDY, 2},		{&CPU::AddrIndexedIndirect, &CPU::LDA, 6},	{&CPU::AddrImmediate, &CPU::LDX, 2},		{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrZeroPage, &CPU::LDY, 3},			{&CPU::AddrZeroPage, &CPU::LDA, 3},			{&CPU::AddrZeroPage, &CPU::LDX, 3},			{&CPU::AddrImplied, &CPU::NOP, 3},
-	{&CPU::AddrImplied, &CPU::TAY, 2},			{&CPU::AddrImmediate, &CPU::LDA, 2},		{&CPU::AddrImplied, &CPU::TAX, 2},			{&CPU::AddrImplied, &CPU::NOP, 2},
-	{&CPU::AddrAbsolute, &CPU::LDY, 4},			{&CPU::AddrAbsolute, &CPU::LDA, 4},			{&CPU::AddrAbsolute, &CPU::LDX, 4},			{&CPU::AddrImplied, &CPU::NOP, 4},
+	{MODE_IMMEDIATE, &CPU::LDY, "LDY", 2},		{MODE_INDEXEDINDIRECT, &CPU::LDA, "LDA", 6},	{MODE_IMMEDIATE, &CPU::LDX, "LDX", 2},		{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_ZEROPAGE, &CPU::LDY, "LDY", 3},			{MODE_ZEROPAGE, &CPU::LDA, "LDA", 3},			{MODE_ZEROPAGE, &CPU::LDX, "LDX", 3},			{MODE_IMPLIED, &CPU::NOP, "NOP", 3},
+	{MODE_IMPLIED, &CPU::TAY, "TAY", 2},			{MODE_IMMEDIATE, &CPU::LDA, "LDA", 2},		{MODE_IMPLIED, &CPU::TAX, "TAX", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 2},
+	{MODE_ABSOLUTE, &CPU::LDY, "LDY", 4},			{MODE_ABSOLUTE, &CPU::LDA, "LDA", 4},			{MODE_ABSOLUTE, &CPU::LDX, "LDX", 4},			{MODE_IMPLIED, &CPU::NOP, "NOP", 4},
 
 	//B
-	{&CPU::AddrRelative, &CPU::BCS, 2},			{&CPU::AddrIndirectIndexed, &CPU::LDA, 5},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 5},
-	{&CPU::AddrZeroPageX, &CPU::LDY, 4},		{&CPU::AddrZeroPageX, &CPU::LDA, 4},		{&CPU::AddrZeroPageY, &CPU::LDX, 4},		{&CPU::AddrImplied, &CPU::NOP, 4},
-	{&CPU::AddrImplied, &CPU::CLV, 2},			{&CPU::AddrAbsoluteY, &CPU::LDA, 4},		{&CPU::AddrImplied, &CPU::TSX, 2},			{&CPU::AddrImplied, &CPU::NOP, 4},
-	{&CPU::AddrAbsoluteX, &CPU::LDY, 4},		{&CPU::AddrAbsoluteX, &CPU::LDA, 4},		{&CPU::AddrAbsoluteY, &CPU::LDX, 4},		{&CPU::AddrImplied, &CPU::NOP, 4},
+	{MODE_RELATIVE, &CPU::BCS, "BCS", 2},			{MODE_INDIRECTINDEXED, &CPU::LDA, "LDA", 5},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
+	{MODE_ZEROPAGEX, &CPU::LDY, "LDY", 4},		{MODE_ZEROPAGEX, &CPU::LDA, "LDA", 4},		{MODE_ZEROPAGEY, &CPU::LDX, "LDX", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 4},
+	{MODE_IMPLIED, &CPU::CLV, "CLV", 2},			{MODE_ABSOLUTEY, &CPU::LDA, "LDA", 4},		{MODE_IMPLIED, &CPU::TSX, "TSX", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 4},
+	{MODE_ABSOLUTEX, &CPU::LDY, "LDY", 4},		{MODE_ABSOLUTEX, &CPU::LDA, "LDA", 4},		{MODE_ABSOLUTEY, &CPU::LDX, "LDX", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 4},
 
 	//C
-	{&CPU::AddrImmediate, &CPU::CPY, 2},		{&CPU::AddrIndexedIndirect, &CPU::CMP, 6},	{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrZeroPage, &CPU::CPY, 3},			{&CPU::AddrZeroPage, &CPU::CMP, 3},			{&CPU::AddrZeroPage, &CPU::DEC, 5},			{&CPU::AddrImplied, &CPU::NOP, 5},
-	{&CPU::AddrImplied, &CPU::INY, 2},			{&CPU::AddrImmediate, &CPU::CMP, 2},		{&CPU::AddrImplied, &CPU::DEX, 2},			{&CPU::AddrImplied, &CPU::NOP, 2},
-	{&CPU::AddrAbsolute, &CPU::CPY, 4},			{&CPU::AddrAbsolute, &CPU::CMP, 4},			{&CPU::AddrAbsolute, &CPU::DEC, 6},			{&CPU::AddrImplied, &CPU::NOP, 6},
+	{MODE_IMMEDIATE, &CPU::CPY, "CPY", 2},		{MODE_INDEXEDINDIRECT, &CPU::CMP, "CMP", 6},	{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_ZEROPAGE, &CPU::CPY, "CPY", 3},			{MODE_ZEROPAGE, &CPU::CMP, "CMP", 3},			{MODE_ZEROPAGE, &CPU::DEC, "DEC", 5},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
+	{MODE_IMPLIED, &CPU::INY, "INY", 2},			{MODE_IMMEDIATE, &CPU::CMP, "CMP", 2},		{MODE_IMPLIED, &CPU::DEX, "DEX", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 2},
+	{MODE_ABSOLUTE, &CPU::CPY, "CPY", 4},			{MODE_ABSOLUTE, &CPU::CMP, "CMP", 4},			{MODE_ABSOLUTE, &CPU::DEC, "DEC", 6},			{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
 
 	//D
-	{&CPU::AddrRelative, &CPU::BNE, 2},			{&CPU::AddrIndirectIndexed, &CPU::CMP, 5},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrZeroPageX, &CPU::CMP, 4},		{&CPU::AddrZeroPageX, &CPU::DEC, 6},		{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrImplied, &CPU::CLD, 2},			{&CPU::AddrAbsoluteY, &CPU::CMP, 4},		{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 7},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrAbsoluteX, &CPU::CMP, 4},		{&CPU::AddrAbsoluteX, &CPU::DEC, 7},		{&CPU::AddrImplied, &CPU::NOP, 7},
+	{MODE_RELATIVE, &CPU::BNE, "BNE", 2},			{MODE_INDIRECTINDEXED, &CPU::CMP, "CMP", 5},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ZEROPAGEX, &CPU::CMP, "CMP", 4},		{MODE_ZEROPAGEX, &CPU::DEC, "DEC", 6},		{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_IMPLIED, &CPU::CLD, "CLD", 2},			{MODE_ABSOLUTEY, &CPU::CMP, "CMP", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ABSOLUTEX, &CPU::CMP, "CMP", 4},		{MODE_ABSOLUTEX, &CPU::DEC, "DEC", 7},		{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
 
 	//E
-	{&CPU::AddrImmediate, &CPU::CPX, 2},		{&CPU::AddrIndexedIndirect, &CPU::SBC, 6},	{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrZeroPage, &CPU::CPX, 3},			{&CPU::AddrZeroPage, &CPU::SBC, 3},			{&CPU::AddrZeroPage, &CPU::INC, 5},			{&CPU::AddrImplied, &CPU::NOP, 5},
-	{&CPU::AddrImplied, &CPU::INX, 2},			{&CPU::AddrImmediate, &CPU::SBC, 2},		{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 2},
-	{&CPU::AddrAbsolute, &CPU::CPX, 4},			{&CPU::AddrAbsolute, &CPU::SBC, 4},			{&CPU::AddrAbsolute, &CPU::INC, 6},			{&CPU::AddrImplied, &CPU::NOP, 6},
+	{MODE_IMMEDIATE, &CPU::CPX, "CPX", 2},		{MODE_INDEXEDINDIRECT, &CPU::SBC, "SBC", 6},	{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_ZEROPAGE, &CPU::CPX, "CPX", 3},			{MODE_ZEROPAGE, &CPU::SBC, "SBC", 3},			{MODE_ZEROPAGE, &CPU::INC, "INC", 5},			{MODE_IMPLIED, &CPU::NOP, "NOP", 5},
+	{MODE_IMPLIED, &CPU::INX, "INX", 2},			{MODE_IMMEDIATE, &CPU::SBC, "SBC", 2},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 2},
+	{MODE_ABSOLUTE, &CPU::CPX, "CPX", 4},			{MODE_ABSOLUTE, &CPU::SBC, "SBC", 4},			{MODE_ABSOLUTE, &CPU::INC, "INC", 6},			{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
 
 	//F
-	{&CPU::AddrRelative, &CPU::BEQ, 2},			{&CPU::AddrIndirectIndexed, &CPU::SBC, 5},	{&CPU::AddrImplied, &CPU::NOP, 0},			{&CPU::AddrImplied, &CPU::NOP, 8},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrZeroPageX, &CPU::SBC, 4},		{&CPU::AddrZeroPageX, &CPU::INC, 6},		{&CPU::AddrImplied, &CPU::NOP, 6},
-	{&CPU::AddrImplied, &CPU::SED, 2},			{&CPU::AddrAbsoluteY, &CPU::SBC, 4},		{&CPU::AddrImplied, &CPU::NOP, 2},			{&CPU::AddrImplied, &CPU::NOP, 7},
-	{&CPU::AddrImplied, &CPU::NOP, 4},			{&CPU::AddrAbsoluteX, &CPU::SBC, 4},		{&CPU::AddrAbsoluteX, &CPU::INC, 7},		{&CPU::AddrImplied, &CPU::NOP, 7}
+	{MODE_RELATIVE, &CPU::BEQ, "BEQ", 2},			{MODE_INDIRECTINDEXED, &CPU::SBC, "SBC", 5},	{MODE_IMPLIED, &CPU::NOP, "NOP", 0},			{MODE_IMPLIED, &CPU::NOP, "NOP", 8},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ZEROPAGEX, &CPU::SBC, "SBC", 4},		{MODE_ZEROPAGEX, &CPU::INC, "INC", 6},		{MODE_IMPLIED, &CPU::NOP, "NOP", 6},
+	{MODE_IMPLIED, &CPU::SED, "SEC", 2},			{MODE_ABSOLUTEY, &CPU::SBC, "SBC", 4},		{MODE_IMPLIED, &CPU::NOP, "NOP", 2},			{MODE_IMPLIED, &CPU::NOP, "NOP", 7},
+	{MODE_IMPLIED, &CPU::NOP, "NOP", 4},			{MODE_ABSOLUTEX, &CPU::SBC, "SBC", 4},		{MODE_ABSOLUTEX, &CPU::INC, "INC", 7},		{MODE_IMPLIED, &CPU::NOP, "NOP", 7}
 };
 
 CPU::CPU(Bus* b) { 
@@ -141,11 +159,26 @@ void CPU::DrawState() {
 	ImGui::SetWindowPos(ImVec2(1280 - 350, 75));
 
 	ImGui::Text("A: %s X: %s Y: %s", Util::hex(A).c_str(), Util::hex(X).c_str(), Util::hex(Y).c_str());
-	ImGui::Text("SP: %s PC: %s", Util::hex(SP).c_str(), Util::hex(PC).c_str());
-	ImGui::Text("Opcode: %s", Util::hex(opcode).c_str());
+	ImGui::Text("SP: %s PC: %s Opcode: %s", Util::hex(SP).c_str(), Util::hex(PC).c_str(), Util::hex(bus->Read(PC)).c_str());
+
+
+	unsigned int index = PC;
+	for (unsigned int i = 0; i < 10; i++) {
+		auto disassembly = DisassembleInstruction(index);
+
+		ImGui::Text("$%s - %s", Util::hex(index).c_str(), disassembly.first.c_str());
+
+		index += disassembly.second;
+	}
+
+	
 	ImGui::End();
 
 }
+std::string CPU::DisassembleROM() {
+	return "";
+}
+
 
 ImColor screenColors[] = {
 	ImColor(0, 0, 0, 255),
@@ -184,6 +217,120 @@ void CPU::DrawScreen() {
 
 	ImGui::End();
 }
+
+std::pair<std::string, int> CPU::DisassembleInstruction(uint16_t memLocation) {
+
+	uint8_t opcode = bus->Read(memLocation);
+	std::string instruction = opcodes[opcode].name;
+	std::stringstream ss;
+
+	int length = 0;
+
+	uint8_t offset = 0;
+	uint16_t val = 0;
+	uint16_t high = 0;
+	uint16_t low = 0;
+	uint16_t high2 = 0;
+	uint16_t low2 = 0;
+	uint16_t zp = 0;
+
+	switch (opcodes[opcode].addrMode) {
+		case MODE_IMPLIED:
+			ss << instruction;
+			length = 1;
+			break;
+		case MODE_ACCUMULATOR:
+			ss << instruction;
+			length = 1;
+			break;
+		case MODE_IMMEDIATE:
+			ss << (instruction) << " #$" << (Util::hex(bus->Read(memLocation + 1)));
+			length = 2;
+			break;
+		case MODE_ZEROPAGE:
+			ss << (instruction) << " $" << (Util::hex(bus->Read(memLocation + 1)));
+			length = 2;
+			break;
+		case MODE_ZEROPAGEX:
+			ss << (instruction) << " $" << (Util::hex(bus->Read(memLocation + 1))) << ", X";
+			length = 2;
+			break;
+		case MODE_ZEROPAGEY:
+			ss << (instruction) << " $" << (Util::hex(bus->Read(memLocation + 1))) << ", Y";
+			length = 2;
+			break;
+		case MODE_RELATIVE:
+			offset = bus->Read(memLocation + 1);
+			val = 0;
+			if (offset > 127) {
+				offset = ~offset + 1;
+				val = memLocation - offset;
+			}
+			else {
+				val = memLocation + offset;
+			}
+			ss << instruction << " $" << (Util::hex(memLocation));
+			length = 2;
+			break;
+		case MODE_ABSOLUTE:
+			low = bus->Read(memLocation + 1);
+			high = bus->Read(memLocation + 2);
+
+			ss << (instruction) << " $" << (Util::hex((high << 8) + low)); 
+			length = 3;
+			break;
+		case MODE_ABSOLUTEX:
+			low = bus->Read(memLocation + 1);
+			high = bus->Read(memLocation + 2);
+
+			ss << (instruction) << " $" << (Util::hex((high << 8) + low)) << ", X";
+			length = 3;
+
+			break;
+		case MODE_ABSOLUTEY:
+			low = bus->Read(memLocation + 1);
+			high = bus->Read(memLocation + 2);
+
+			ss << instruction << " $" << (Util::hex((high << 8) + low)) << ", Y";
+			length = 3;
+			break;
+		case MODE_INDIRECT:
+			low = bus->Read(memLocation + 1);
+			high = bus->Read(memLocation + 2);
+
+			low2 = bus->Read((high << 8) + low);
+			high2 = bus->Read((high << 8) + low + 1);
+
+			ss << instruction << " $" << Util::hex((high2 << 8) + low2) << "";
+			length = 3;
+			break;
+		case MODE_INDEXEDINDIRECT:
+			zp = bus->Read(memLocation + 1);
+			low = bus->Read(zp);
+			high = bus->Read(zp + 1);
+
+			ss << instruction << " ($" << (Util::hex((high << 8) + low)) << ", X)";
+			length = 3;
+			break;
+		case MODE_INDIRECTINDEXED:
+			zp = bus->Read(memLocation + 1);
+
+			low = bus->Read(zp);
+			high = bus->Read(zp + 1);
+
+			ss << instruction << " ($" << (Util::hex((high << 8) + low)) << "), Y";
+			length = 3;
+
+			break;
+		default:
+			length = 1;
+			ss << "INVALID ADDRESSING MODE";
+			break;
+	}
+	return std::pair<std::string, int>(ss.str(), length);
+	
+}
+
 void CPU::PrintState() {
 	std::cout << "------------------------------------------------------------------------------------" << std::endl;
 	std::cout << "A: " << Util::hex(A) << " X:" << Util::hex(X) << " Y:" << Util::hex(Y) << std::endl;
@@ -224,12 +371,13 @@ bool CPU::Cycle() {
 
 	//PrintState();
 
-	address = opcodes[opcode].addrMode(*this); // call addressing mode
+	address = addrMap[opcodes[opcode].addrMode](*this); // call addressing mode
 
 	opcodes[opcode].instruction(*this); // call instruction
 
 	++PC;
 	++cycles;
+
 
 	//if (cycles > 100) {
 	//	std::cout << "TOO MANY CYCLES\n";

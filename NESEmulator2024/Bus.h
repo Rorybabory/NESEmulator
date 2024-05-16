@@ -5,6 +5,7 @@
 class CPU;
 class RAM;
 class ROM;
+class Cartridge;
 
 class Bus
 {
@@ -20,11 +21,12 @@ public:
 	void	setDone(bool done);
 
 	uint8_t * getRAM();
+	RAM* ram;
+	ROM* rom;
+	Cartridge* cart;
 
 private:
 	bool done;
 	CPU* cpu;
-	RAM* ram;
-	ROM* rom;
 };
 

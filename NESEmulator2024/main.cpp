@@ -4,6 +4,7 @@
 #include <iostream>
 #include "Bus.h"
 #include "CPU.h"
+#include "Cartridge.h"
 
 #include <GLFW/glfw3.h>
 
@@ -31,6 +32,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 int main()
 {
+    Bus* bus = new Bus();
+    CPU* cpu = bus->getCPU();
+    
+    
     glfwInit();
 
     GLFWwindow* window = glfwCreateWindow(1280, 720, "Emulator", NULL, NULL);
@@ -55,8 +60,7 @@ int main()
     ImGui_ImplOpenGL2_Init();
 
 
-    Bus* bus = new Bus();
-    CPU* cpu = bus->getCPU();
+    
 
     
     int display_w, display_h = 0;
@@ -82,6 +86,8 @@ int main()
         {
             mem_edit.DrawWindow("RAM", bus->getRAM(), 0x800);
         }
+        bus->cart->DrawPrgROM();
+        //bus->cart->drawWindow();
         {
             ImGui::Begin("Controls");
 
@@ -120,7 +126,7 @@ int main()
         if (playing) {
             Timer t = Timer("Timer");
             
-            for (int i = 0; i < 350; i++) {
+            for (int i = 0; i < 351; i++) {
                 cpu->Cycle();
             }
             t.Stop();

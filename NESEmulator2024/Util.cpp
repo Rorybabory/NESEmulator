@@ -5,6 +5,6 @@
 
 namespace Util {
 	std::string hex(int x) {
-		return std::format("{:#x}", x);
+		return std::format("{:x}", x);
 	}
 }

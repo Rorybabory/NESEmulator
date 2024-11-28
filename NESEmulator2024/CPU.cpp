@@ -359,9 +359,9 @@ bool CPU::Cycle() {
 		return false;
 	}
 
-	if (PC == 0x8081) {
-		std::cout << "ILLEGAL MOVE\n";
-	}
+	//if (PC == 0x8081) {
+	//	std::cout << "ILLEGAL MOVE\n";
+	//}
 
 	bus->Write(0xFE, (uint8_t)rand());
 

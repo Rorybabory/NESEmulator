@@ -8,7 +8,7 @@
 Bus::Bus() {
 	cpu = new CPU(this);
 	ram = new RAM(this);
-	cart = new Cartridge(this, "./roms/mario.nes");
+	cart = new Cartridge(this, "./roms/cart2.nes");
 	done = false;
 	//cart->mapper->Write(0xFFFC, 0x00);
 	//cart->mapper->Write(0xFFFD, 0x80);

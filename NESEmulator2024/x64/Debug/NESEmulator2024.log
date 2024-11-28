@@ -1,3 +1,20 @@
-﻿  main.cpp
-C:\Users\Rory Lambert\source\repos\NESEmulator2024\NESEmulator2024\main.cpp(72,15): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-  NESEmulator2024.vcxproj -> C:\Users\Rory Lambert\source\repos\NESEmulator2024\x64\Debug\NESEmulator2024.exe
+﻿  Bus.cpp
+  Cartridge.cpp
+  CPU.cpp
+C:\Users\lambe\source\repos\NESEmulator\NESEmulator2024\CPU.cpp(338,15): warning C4129: 'o': unrecognized character escape sequence
+  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_glfw.cpp
+  imgui_impl_opengl2.cpp
+  imgui_tables.cpp
+  imgui_widgets.cpp
+  main.cpp
+C:\Users\lambe\source\repos\NESEmulator\NESEmulator2024\main.cpp(76,15): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Mapper_0.cpp
+  PPU.cpp
+  RAM.cpp
+  Util.cpp
+  Generating Code...
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  NESEmulator2024.vcxproj -> C:\Users\lambe\source\repos\NESEmulator\x64\Debug\NESEmulator2024.exe

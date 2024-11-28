@@ -5,6 +5,7 @@
 class CPU;
 class RAM;
 class ROM;
+class PPU;
 class Cartridge;
 
 class Bus
@@ -22,9 +23,8 @@ public:
 
 	uint8_t * getRAM();
 	RAM* ram;
-	ROM* rom;
 	Cartridge* cart;
-
+	PPU* ppu;
 private:
 	bool done;
 	CPU* cpu;

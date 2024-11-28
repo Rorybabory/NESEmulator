@@ -6,12 +6,13 @@
 #include "CPU.h"
 #include "Cartridge.h"
 
-#include <GLFW/glfw3.h>
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl2.h"
 #include "imgui/imgui_memory_editor.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #include "Timer.h"
 
@@ -45,10 +46,16 @@ int main()
         glfwTerminate();
         return -1;
     }
-
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     glfwSetKeyCallback(window, key_callback);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
 
     //Setup IMGUI
     IMGUI_CHECKVERSION();
@@ -121,7 +128,7 @@ int main()
             ImGui::End();
         }
         cpu->DrawState();
-        cpu->DrawScreen();
+        bus->DrawScreen();
         
         if (playing) {
             Timer t = Timer("Timer");

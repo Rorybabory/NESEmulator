@@ -13,6 +13,7 @@ public:
 	void DrawScreen();
 	
 private:
+	unsigned int texture;
 	Bus* bus;
 	unsigned int scrTex;
 	uint8_t registers[8];

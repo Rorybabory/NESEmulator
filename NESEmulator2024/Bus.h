@@ -17,11 +17,13 @@ public:
 	void		Write(uint16_t addr, uint8_t data);
 
 	CPU* getCPU() { return cpu; }
+	void DrawScreen();
 
 	bool	getDone();
 	void	setDone(bool done);
 
 	uint8_t * getRAM();
+
 	RAM* ram;
 	Cartridge* cart;
 	PPU* ppu;

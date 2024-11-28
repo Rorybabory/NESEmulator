@@ -48,7 +48,9 @@ void Bus::Write(uint16_t addr, uint8_t data) {
 		ppu->WriteRegister((addr - 0x2000) % 8, data);
 	}
 }
-
+void Bus::DrawScreen() {
+	ppu->DrawScreen();
+}
 uint8_t * Bus::getRAM() {
 	return ram->data;
 }

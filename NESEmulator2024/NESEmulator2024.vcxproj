@@ -171,6 +171,7 @@
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="Mapper.h" />
     <ClInclude Include="Mapper_0.h" />
+    <ClInclude Include="palette.h" />
     <ClInclude Include="PPU.h" />
     <ClInclude Include="RAM.h" />
     <ClInclude Include="Timer.h" />

@@ -156,7 +156,7 @@ void CPU::DrawState() {
 	ImGui::Begin("State");
 
 	ImGui::SetWindowSize(ImVec2(350, 300));
-	ImGui::SetWindowPos(ImVec2(1280 - 350, 75));
+	ImGui::SetWindowPos(ImVec2(1920 - 350, 75));
 
 	ImGui::Text("A: %s X: %s Y: %s", Util::hex(A).c_str(), Util::hex(X).c_str(), Util::hex(Y).c_str());
 	ImGui::Text("SP: %s PC: %s Opcode: %s", Util::hex(SP).c_str(), Util::hex(PC).c_str(), Util::hex(bus->Read(PC)).c_str());

@@ -39,7 +39,7 @@ int main()
     
     glfwInit();
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Emulator", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1920, 1080, "Emulator", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -99,7 +99,7 @@ int main()
             ImGui::Begin("Controls");
 
             ImGui::SetWindowSize(ImVec2(350, 75));
-            ImGui::SetWindowPos(ImVec2(1280 - 350, 0));
+            ImGui::SetWindowPos(ImVec2(1920 - 350, 0));
 
             if (ImGui::Button("Start")) {
                 playing = true;

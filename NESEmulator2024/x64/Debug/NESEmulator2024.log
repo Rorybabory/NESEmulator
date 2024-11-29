@@ -1,3 +1,3 @@
 ﻿  PPU.cpp
-C:\Users\lambe\source\repos\NESEmulator\NESEmulator2024\PPU.cpp(52,15): warning C4312: 'type cast': conversion from 'unsigned int' to 'ImTextureID' of greater size
+C:\Users\lambe\source\repos\NESEmulator\NESEmulator2024\PPU.cpp(67,15): warning C4312: 'type cast': conversion from 'unsigned int' to 'ImTextureID' of greater size
   NESEmulator2024.vcxproj -> C:\Users\lambe\source\repos\NESEmulator\x64\Debug\NESEmulator2024.exe

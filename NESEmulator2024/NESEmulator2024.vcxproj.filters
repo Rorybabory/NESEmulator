@@ -122,5 +122,8 @@
     <ClInclude Include="Mapper_0.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="palette.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
